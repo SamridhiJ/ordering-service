@@ -21,6 +21,7 @@ import com.eatza.order.dto.OrderUpdateDto;
 import com.eatza.order.dto.OrderUpdateResponseDto;
 import com.eatza.order.dto.OrderedItemsDto;
 import com.eatza.order.exception.OrderException;
+import com.eatza.order.feignClient.RestaurantFeignClient;
 import com.eatza.order.model.Order;
 import com.eatza.order.model.OrderedItem;
 import com.eatza.order.repository.OrderRepository;
@@ -34,6 +35,8 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	OrderRepository orderRepository;
 
+	@Autowired
+	RestaurantFeignClient feignClient;
 
 	@Autowired
 	ItemService itemService;
@@ -63,8 +66,8 @@ public class OrderServiceImpl implements OrderService {
 			restTemplate.setMessageConverters(messageConverters);
 			try {
 				logger.debug("Calling restaurant search service to get item details");
-				ItemFetchDto item = restTemplate.getForObject(restaurantServiceItemUrl+itemDto.getItemId(), ItemFetchDto.class);
-
+//				ItemFetchDto item = restTemplate.getForObject(restaurantServiceItemUrl+itemDto.getItemId(), ItemFetchDto.class);
+				ItemFetchDto item= feignClient.getItemDto(itemDto.getItemId());
 				if(item==null ) {
 
 					orderRepository.delete(order);
