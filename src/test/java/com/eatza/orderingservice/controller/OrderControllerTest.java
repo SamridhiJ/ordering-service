@@ -14,6 +14,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.util.concurrent.ListenableFuture;
 
 import com.eatza.order.controller.OrderController;
 import com.eatza.order.dto.OrderRequestDto;
@@ -34,6 +37,12 @@ public class OrderControllerTest {
 	@Mock
 	private OrderService orderService;
 
+	@Mock
+	private KafkaTemplate<String, String> kafkaTemplate;
+
+	@Mock
+	private ListenableFuture<SendResult<String, String>> future;
+
 	private static final String AUTHORIZATION = "t0k3n";
 	private static final Long ORDER_ID = 1L;
 
@@ -48,12 +57,14 @@ public class OrderControllerTest {
 		OrderRequestDto orderRequestDto = getOrderRequest();
 		Order order = new Order(1L, "CREATED", 1L);
 		Mockito.when(orderService.placeOrder(Mockito.any(OrderRequestDto.class))).thenReturn(order);
+		Mockito.when(kafkaTemplate.send(Mockito.anyString(), Mockito.anyString())).thenReturn(future);
 		assertEquals(order, orderController.placeOrder(AUTHORIZATION, orderRequestDto).getBody());
 	}
 
 	@Test
 	public void cancelOrderTest() throws OrderException {
 		Mockito.when(orderService.cancelOrder(Mockito.anyLong())).thenReturn(true);
+		Mockito.when(kafkaTemplate.send(Mockito.anyString(), Mockito.anyString())).thenReturn(future);
 		assertEquals("Order Cancelled Successfully", orderController.cancel(AUTHORIZATION, ORDER_ID).getBody());
 	}
 
@@ -70,6 +81,7 @@ public class OrderControllerTest {
 				orderRequestDto.getRestaurantId(), orderRequestDto.getItems(), 1L);
 		OrderUpdateResponseDto orderUpdateResponseDto = getOrderResponse();
 		Mockito.when(orderService.updateOrder(Mockito.any(OrderUpdateDto.class))).thenReturn(orderUpdateResponseDto);
+		Mockito.when(kafkaTemplate.send(Mockito.anyString(), Mockito.anyString())).thenReturn(future);
 		assertEquals(orderUpdateResponseDto, orderController.updateOrder(AUTHORIZATION, orderUpdateDto).getBody());
 	}
 

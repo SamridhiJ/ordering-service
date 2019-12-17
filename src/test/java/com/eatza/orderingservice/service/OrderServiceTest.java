@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
 
 import com.eatza.order.dto.ItemFetchDto;
 import com.eatza.order.dto.MenuFetchDto;
@@ -28,6 +27,7 @@ import com.eatza.order.dto.OrderUpdateDto;
 import com.eatza.order.dto.OrderedItemsDto;
 import com.eatza.order.dto.RestaurantFetchDto;
 import com.eatza.order.exception.OrderException;
+import com.eatza.order.feignClient.RestaurantFeignClient;
 import com.eatza.order.model.Order;
 import com.eatza.order.model.OrderedItem;
 import com.eatza.order.repository.OrderRepository;
@@ -47,7 +47,10 @@ public class OrderServiceTest {
 	private ItemServiceImpl itemService;
 
 	@Mock
-	private RestTemplate restTemplate;
+	private RestaurantFeignClient feignClient;
+
+//	@Mock
+//	private RestTemplate restTemplate;
 
 	OrderRequestDto orderRequest = getOrderRequest(getOrderedItems());
 	ItemFetchDto item = getItem(getMenuDetails(getRestaurantDetails()));
@@ -56,7 +59,7 @@ public class OrderServiceTest {
 	@Test
 	public void placeOrder_basic() throws OrderException {
 		Mockito.when(orderRepository.save(any(Order.class))).thenReturn(order);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(item);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(item);
 		when(itemService.saveItem(any(OrderedItem.class))).thenReturn(new OrderedItem());
 		assertEquals(order, orderService.placeOrder(orderRequest));
 	}
@@ -64,15 +67,14 @@ public class OrderServiceTest {
 	@Test(expected = OrderException.class)
 	public void placeOrder_Exception() throws OrderException {
 		Mockito.when(orderRepository.save(any(Order.class))).thenReturn(order);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any()))
-				.thenThrow(ResourceAccessException.class);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenThrow(ResourceAccessException.class);
 		assertEquals(order, orderService.placeOrder(orderRequest));
 	}
 
 	@Test(expected = OrderException.class)
 	public void placeOrder_different_restaurant() throws OrderException {
 		Mockito.when(orderRepository.save(any(Order.class))).thenReturn(order);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(null);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(null);
 		orderService.placeOrder(orderRequest);
 
 	}
@@ -86,7 +88,7 @@ public class OrderServiceTest {
 
 		item.setMenu(menu);
 		Mockito.when(orderRepository.save(Mockito.any(Order.class))).thenReturn(order);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(item);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(item);
 		orderService.placeOrder(orderRequest);
 
 	}
@@ -98,7 +100,7 @@ public class OrderServiceTest {
 		OrderRequestDto orderRequest = getOrderRequest(orderedItemsDto);
 		ItemFetchDto item = getItem(getMenuDetails(getRestaurantDetails()));
 		Mockito.when(orderRepository.save(any(Order.class))).thenReturn(order);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(item);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(item);
 		orderService.placeOrder(orderRequest);
 	}
 
@@ -159,7 +161,7 @@ public class OrderServiceTest {
 		Optional<Order> optinalOrder = Optional.of(order);
 		Mockito.when(orderRepository.findById(Mockito.anyLong())).thenReturn(optinalOrder);
 		ItemFetchDto item = getItem(getMenuDetails(getRestaurantDetails()));
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(item);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(item);
 		orderService.updateOrder(orderUpdateDto);
 
 	}
@@ -170,7 +172,7 @@ public class OrderServiceTest {
 		order.setStatus("UPDATED");
 		Optional<Order> optinalOrder = Optional.of(order);
 		Mockito.when(orderRepository.findById(anyLong())).thenReturn(optinalOrder);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(null);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(null);
 		orderService.updateOrder(orderUpdateDto);
 
 	}
@@ -183,7 +185,7 @@ public class OrderServiceTest {
 		RestaurantFetchDto restaurantFetchDto = getRestaurantDetails();
 		restaurantFetchDto.setId(4L);
 		ItemFetchDto item = getItem(getMenuDetails(restaurantFetchDto));
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(item);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(item);
 		orderService.updateOrder(orderUpdateDto);
 
 	}
@@ -196,7 +198,7 @@ public class OrderServiceTest {
 		Optional<Order> optionalOrder = Optional.of(order);
 		Mockito.when(orderRepository.findById(anyLong())).thenReturn(optionalOrder);
 		ItemFetchDto item = getItem(getMenuDetails(getRestaurantDetails()));
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any())).thenReturn(item);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenReturn(item);
 		Mockito.when(itemService.saveItem(any(OrderedItem.class))).thenReturn(getOrderedItems(optionalOrder).get(0));
 		Mockito.when(orderRepository.save(Mockito.any(Order.class))).thenReturn(orderReturned);
 		assertEquals(orderReturned.getId(), orderService.updateOrder(orderUpdateDto).getOrderId());
@@ -209,8 +211,7 @@ public class OrderServiceTest {
 		orderReturned.setId(1L);
 		Optional<Order> optionalOrder = Optional.of(order);
 		Mockito.when(orderRepository.findById(anyLong())).thenReturn(optionalOrder);
-		Mockito.when(restTemplate.getForObject(Mockito.any(String.class), Mockito.any()))
-				.thenThrow(ResourceAccessException.class);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenThrow(ResourceAccessException.class);
 		orderService.updateOrder(orderUpdateDto);
 	}
 
