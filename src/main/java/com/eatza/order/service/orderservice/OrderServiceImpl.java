@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import com.eatza.order.dto.ItemFetchDto;
@@ -23,6 +22,8 @@ import com.eatza.order.model.Order;
 import com.eatza.order.model.OrderedItem;
 import com.eatza.order.repository.OrderRepository;
 import com.eatza.order.service.itemservice.ItemService;
+
+import feign.FeignException;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -80,9 +81,9 @@ public class OrderServiceImpl implements OrderService {
 				OrderedItem itemToPersist = new OrderedItem(item.getName(), itemDto.getQuantity(), item.getPrice(),
 						savedOrder, item.getId());
 				itemService.saveItem(itemToPersist);
-			} catch (ResourceAccessException e) {
-				throw new OrderException(
-						"Something went wrong, looks " + "like restaurant is currently not accepting orders");
+
+			} catch (FeignException e) {
+				throw new OrderException("Restaurant is facing some server issue.");
 			}
 		}
 		logger.debug("Saved order to db");
@@ -185,9 +186,8 @@ public class OrderServiceImpl implements OrderService {
 				itemToPersist.setId(itemDto.getItemId());
 				OrderedItem savedItem = itemService.saveItem(itemToPersist);
 				updateItemsListToReturn.add(savedItem);
-			} catch (ResourceAccessException e) {
-				throw new OrderException(
-						"Something went wrong, looks " + "like restaurant is currently not operatable");
+			} catch (FeignException e) {
+				throw new OrderException("Restaurant is facing some server issue.");
 			}
 
 		}

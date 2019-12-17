@@ -34,6 +34,8 @@ import com.eatza.order.repository.OrderRepository;
 import com.eatza.order.service.itemservice.ItemServiceImpl;
 import com.eatza.order.service.orderservice.OrderServiceImpl;
 
+import feign.FeignException;
+
 @RunWith(MockitoJUnitRunner.class)
 public class OrderServiceTest {
 
@@ -67,7 +69,7 @@ public class OrderServiceTest {
 	@Test(expected = OrderException.class)
 	public void placeOrder_Exception() throws OrderException {
 		Mockito.when(orderRepository.save(any(Order.class))).thenReturn(order);
-		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenThrow(ResourceAccessException.class);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenThrow(FeignException.class);
 		assertEquals(order, orderService.placeOrder(orderRequest));
 	}
 
@@ -211,7 +213,7 @@ public class OrderServiceTest {
 		orderReturned.setId(1L);
 		Optional<Order> optionalOrder = Optional.of(order);
 		Mockito.when(orderRepository.findById(anyLong())).thenReturn(optionalOrder);
-		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenThrow(ResourceAccessException.class);
+		Mockito.when(feignClient.getItemDto(Mockito.anyLong())).thenThrow(FeignException.class);
 		orderService.updateOrder(orderUpdateDto);
 	}
 

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.eatza.order.dto.ItemFetchDto;
 
-@FeignClient(name = "search-service")
+@FeignClient(name = "search-service", fallbackFactory = RestaurantFallbackFactory.class)
 @Service
 public interface RestaurantFeignClient {
 
